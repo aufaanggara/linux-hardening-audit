@@ -2,33 +2,30 @@
 
 Terakhir diupdate: 21 Oktober 2026
 
-Dokumen hidup untuk Fase 3 (Hardening Manual) dan Fase 4 (Audit Script). Simpan di `checklist/cis-benchmark-checklist.md`.
+Checklist ini jadi acuan buat Fase 3 sampai 5: di Fase 3 tiap item dikerjain satu-satu secara manual, di Fase 4 dibikin script yang ngecek semuanya, di Fase 5 hasil before/after masuk writeup. Fase 1 dan 2 cuma setup dan kenalan, jadi nggak masuk daftar CIS. Simpan di `checklist/cis-benchmark-checklist.md`.
 
-Legenda:
+Cara bacanya:
 
-- `[x]` = selesai dan terverifikasi (ada bukti screenshot atau output)
-- `[ ]` = belum dikerjakan atau belum dikonfirmasi
-- Item tanpa tag = dari checklist awal, dipertahankan persis
-- Item bertanda **(tambahan)** = ditambahkan karena relevan dengan CIS Benchmark Ubuntu, dengan penjelasan singkat bila perlu
-- Setiap item `[x]` dicatat bukti dan tanggalnya di Progress Log (bagian paling bawah)
+- `[x]` = udah selesai dan ada buktinya (screenshot atau output)
+- `[ ]` = belum dikerjain, atau belum dikonfirmasi
+- Bukti tiap item yang selesai dicatat di Progress Log paling bawah
 
 ---
 
-## Ringkasan Progress Hardening (Kategori A sampai F)
+## Ringkasan Progress
 
-| Kategori | Selesai | Total item | Asli / tambahan |
-|---|---|---|---|
-| A. Filesystem & Initial Setup | 2 | 18 | 3 / 15 |
-| B. Services | 0 | 7 | 2 / 5 |
-| C. Network Configuration | 0 | 16 | 4 / 12 |
-| D. Logging & Auditing | 0 | 12 | 3 / 9 |
-| E. Access, Authentication, Authorization | 0 | 28 | 6 / 22 |
-| F. System Maintenance / File Permissions | 2 | 15 | 5 / 10 |
-| **Total** | **4** | **96** | **23 / 73** |
+| Fase | Selesai | Total |
+|---|---|---|
+| Fase 1: Setup | 5 | 5 |
+| Fase 2: FHS | 9 | 11 |
+| Fase 3: Hardening (kategori A sampai F) | 4 | 96 |
+| Fase 4: Audit script | 0 | 21 |
+| Fase 5: Dokumentasi | 0 | 6 |
+| **Semua fase** | **18** | **139** |
 
-- Progress: 4 dari 96 item (4%)
-- Item asli dari checklist awal: 23; item tambahan: 73
-- Item `[x]` di kategori F adalah verifikasi baseline (sudah sesuai sejak instalasi), bukan hasil perubahan
+- Progress seluruh project: 18 dari 139 item (13%)
+- Item CIS asli ada 23 (dari checklist awal), sisanya aku masukin biar cakupannya lebih lengkap
+- Yang `[x]` di kategori F baru verifikasi kondisi awal (sudah sesuai sejak instalasi), bukan hasil perubahan
 - Item berikutnya: `/dev/shm` `noexec`, lalu AIDE
 
 ---
@@ -52,14 +49,14 @@ Membangun pemahaman mendalam tentang struktur filesystem Linux (FHS), lalu mener
 
 ### Fase 1: Setup Environment (selesai)
 
-- [x] Install Ubuntu Server di VBox (minimal install, no GUI). Catatan: dipakai instalasi "Ubuntu Server" standar, bukan "minimized", agar baseline lengkap
-- [x] Setup networking (bridged/NAT), SSH access. Catatan: dipakai NAT + Host-only (dual adapter), SSH dari Windows host berhasil
+- [x] Install Ubuntu Server di VBox (minimal install, no GUI). Aku pakai install standar, bukan "minimized", biar baseline-nya lengkap
+- [x] Setup networking (bridged/NAT), SSH access. Aku pakai NAT + Host-only (dua adapter), SSH dari Windows udah jalan
 - [x] Snapshot VM di kondisi fresh install (buat baseline sebelum hardening): `fresh-install-before-hardening`
-- [x] Custom partitioning: `/` 15G, swap 4G, `/tmp` 3G, `/var` 5G, **(tambahan)** `/var/log` 5G, `/home` 5G
-- [x] **(tambahan)** Struktur folder project dibuat dan di-push ke Git
-- [ ] **(tambahan)** Akar masalah VM stuck di "Loading essential drivers" belum terkonfirmasi; workaround GRUB `e` lalu `F10`
+- [x] Custom partitioning: `/` 15G, swap 4G, `/tmp` 3G, `/var` 5G, `/var/log` 5G, `/home` 5G
+- [x] Struktur folder project dibuat dan di-push ke Git
+- Catatan: VM sempat stuck di "Loading essential drivers", penyebab pastinya belum ketemu. Sementara pakai workaround GRUB: tekan `e` lalu `F10`
 
-### Fase 2: Pembelajaran FHS (Filesystem Hierarchy Standard) (selesai)
+### Fase 2: Pembelajaran FHS (Filesystem Hierarchy Standard) (selesai, sisa yang opsional)
 
 Jangan cuma `cd` manual satu-satu. Pelajari dengan kerangka:
 
@@ -71,7 +68,7 @@ Jangan cuma `cd` manual satu-satu. Pelajari dengan kerangka:
   - [x] `/opt`, `/mnt`, `/media`, `/srv` (kosong, baseline)
   - [x] `/proc`, `/sys`
   - [x] `/home`, `/root`, `/boot`
-  - [ ] `/usr` dan `/dev` (baru sebagian, dibahas lewat symlink dan `/dev/shm`)
+  - [ ] `/usr` dan `/dev` (baru sebagian, kebahas lewat symlink dan `/dev/shm`)
 - [x] Kenapa itu relevan buat blue team: `/tmp` dan `/dev/shm` sering dipakai attacker buat staging payload karena writable & world-accessible; `/var/log` isinya log yang perlu diketahui lokasinya buat investigasi; `/etc/passwd` vs `/etc/shadow` beda fungsi & risk-nya
 - [ ] Referensi resmi: `man hier` (built-in di Linux) dan FHS spec dari Linux Foundation (belum dibaca)
 
@@ -79,10 +76,10 @@ Jangan cuma `cd` manual satu-satu. Pelajari dengan kerangka:
 
 Lakukan satu per satu secara manual dulu sebelum bikin script, supaya paham konsep di balik tiap konfigurasi, bukan cuma copy-paste command.
 
-- Urutan mengikuti kategori A sampai F di bawah
-- Setiap item: baseline (sebelum), konfigurasi, verifikasi, screenshot (sesudah)
-- Backup file konfigurasi sebelum diedit; snapshot VM sebagai jalan kembali
-- Uji perubahan SSH dari sesi kedua sebelum menutup sesi lama
+- Urutannya ikut kategori A sampai F di bawah
+- Tiap item: catat kondisi awal, konfigurasi, verifikasi, lalu screenshot hasilnya
+- Backup file konfigurasi sebelum diedit, dan snapshot VM buat jaga-jaga
+- Perubahan SSH dites dari sesi kedua dulu sebelum sesi lama ditutup
 
 ### Fase 4: Build Audit Script (belum dimulai)
 
@@ -94,48 +91,43 @@ Bikin Bash script yang mengecek compliance tiap item di checklist, output PASS/F
 - [ ] Command yang dipakai + penjelasan kenapa
 - [ ] Hasil run audit script (before vs after hardening)
 - [ ] Push ke GitHub repo
-- [ ] **(tambahan)** `README.md` repo dan `writeup.md` (apa yang dipelajari, kesulitan, temuan menarik)
-- [ ] **(tambahan)** Bagian troubleshooting jujur: yang terbukti vs yang masih dugaan
+- [ ] `README.md` repo dan `writeup.md` (apa yang dipelajari, kesulitan, temuan menarik)
+- [ ] Bagian troubleshooting yang jujur: mana yang terbukti, mana yang masih dugaan
 
 ---
-## CIS Benchmark Checklist (Ubuntu, simplified + tambahan)
+
+## CIS Benchmark Checklist (Ubuntu, Fase 3 sampai 5)
 
 ### A. Filesystem & Initial Setup
 
 - [x] Partisi terpisah untuk `/tmp`, `/var`, `/var/log`, `/home`
 - [x] `nodev`, `nosuid`, `noexec` diset pada `/tmp` di `/etc/fstab`
 - [ ] AIDE terinstall untuk filesystem integrity checking
-
-Tambahan:
-
-- [ ] **(tambahan)** `/dev/shm` di-mount dengan `nodev`, `nosuid`, `noexec`. Baseline: `rw,nosuid,nodev,inode64` (tanpa `noexec`); langkah sudah diberikan, hasil belum dikonfirmasi
-- [ ] **(tambahan)** `nodev` dan `nosuid` pada `/var` dan `/home`; `nodev`, `nosuid`, `noexec` pada `/var/log`
-- [ ] **(tambahan)** Partisi terpisah untuk `/var/tmp` dan `/var/log/audit` (opsional; `/var/tmp` ikut dikunci seperti `/tmp`)
-- [ ] **(tambahan)** Database AIDE diinisialisasi dan pengecekan dijadwalkan (cron atau systemd timer)
-- [ ] **(tambahan)** Filesystem yang tidak dipakai dinonaktifkan lewat modprobe: `cramfs`, `freevxfs`, `hfs`, `hfsplus`, `jffs2`, `udf`. `squashfs` dikecualikan selama `snap` dipakai
-- [ ] **(tambahan)** `usb-storage` di-blacklist (mencegah media removable di server)
-- [ ] **(tambahan)** `autofs` tidak terinstall atau dinonaktifkan (cegah automount)
-- [ ] **(tambahan)** Permission `/boot/grub/grub.cfg` dibatasi (root, tidak bisa dibaca group/other); password GRUB opsional untuk VM lab
-- [ ] **(tambahan)** ASLR aktif: `kernel.randomize_va_space = 2`
-- [ ] **(tambahan)** Core dump dibatasi: `fs.suid_dumpable = 0` dan `* hard core 0` di `limits.conf`
-- [ ] **(tambahan)** `kernel.yama.ptrace_scope` minimal 1
-- [ ] **(tambahan)** AppArmor aktif dan profile dalam mode enforce
-- [ ] **(tambahan)** Banner `/etc/issue`, `/etc/issue.net`, `/etc/motd` tidak membocorkan versi OS
-- [ ] **(tambahan)** Paket dan security update terbaru (`apt update && apt upgrade`); baseline: 34 update tertunda; `unattended-upgrades` aktif
-- [ ] **(tambahan)** Time synchronization aktif (`systemd-timesyncd` atau `chrony`), penting agar timestamp log konsisten
+- [ ] `/dev/shm` di-mount dengan `nodev`, `nosuid`, `noexec`. Baseline: `rw,nosuid,nodev,inode64` (tanpa `noexec`); langkah sudah diberikan, hasil belum dikonfirmasi
+- [ ] `nodev` dan `nosuid` pada `/var` dan `/home`; `nodev`, `nosuid`, `noexec` pada `/var/log`
+- [ ] Partisi terpisah untuk `/var/tmp` dan `/var/log/audit` (opsional; `/var/tmp` ikut dikunci seperti `/tmp`)
+- [ ] Database AIDE diinisialisasi dan pengecekan dijadwalkan (cron atau systemd timer)
+- [ ] Filesystem yang tidak dipakai dinonaktifkan lewat modprobe: `cramfs`, `freevxfs`, `hfs`, `hfsplus`, `jffs2`, `udf`. `squashfs` dikecualikan selama `snap` dipakai
+- [ ] `usb-storage` di-blacklist (mencegah media removable di server)
+- [ ] `autofs` tidak terinstall atau dinonaktifkan (cegah automount)
+- [ ] Permission `/boot/grub/grub.cfg` dibatasi (root, tidak bisa dibaca group/other); password GRUB opsional untuk VM lab
+- [ ] ASLR aktif: `kernel.randomize_va_space = 2`
+- [ ] Core dump dibatasi: `fs.suid_dumpable = 0` dan `* hard core 0` di `limits.conf`
+- [ ] `kernel.yama.ptrace_scope` minimal 1
+- [ ] AppArmor aktif dan profile dalam mode enforce
+- [ ] Banner `/etc/issue`, `/etc/issue.net`, `/etc/motd` tidak membocorkan versi OS
+- [ ] Paket dan security update terbaru (`apt update && apt upgrade`); baseline: 34 update tertunda; `unattended-upgrades` aktif
+- [ ] Time synchronization aktif (`systemd-timesyncd` atau `chrony`), penting agar timestamp log konsisten
 
 ### B. Services
 
 - [ ] Disable service yang tidak perlu: `avahi-daemon`, `cups`, `isc-dhcp-server`, `nfs-server`, `rpcbind`, `samba`, `xinetd`
 - [ ] Cek service aktif: `systemctl list-units --type=service --state=running`
-
-Tambahan:
-
-- [ ] **(tambahan)** Simpan baseline daftar service yang berjalan sebelum hardening (untuk perbandingan before/after)
-- [ ] **(tambahan)** Tidak terinstall atau disabled bila tidak dipakai: `slapd`, `snmpd`, `vsftpd`, `telnetd`, `tftpd`, `dovecot`, `squid`, `bind9`, `apache2`, `nginx`, `nis`, `rsync` (service), `dnsmasq`
-- [ ] **(tambahan)** MTA (misal `postfix`) hanya listen di localhost, bila terinstall
-- [ ] **(tambahan)** `xserver-xorg` tidak terinstall (server tanpa GUI)
-- [ ] **(tambahan)** Tinjau kebutuhan `snapd` dan `lxd`
+- [ ] Simpan baseline daftar service yang berjalan sebelum hardening (untuk perbandingan before/after)
+- [ ] Tidak terinstall atau disabled bila tidak dipakai: `slapd`, `snmpd`, `vsftpd`, `telnetd`, `tftpd`, `dovecot`, `squid`, `bind9`, `apache2`, `nginx`, `nis`, `rsync` (service), `dnsmasq`
+- [ ] MTA (misal `postfix`) hanya listen di localhost, bila terinstall
+- [ ] `xserver-xorg` tidak terinstall (server tanpa GUI)
+- [ ] Tinjau kebutuhan `snapd` dan `lxd`
 
 ### C. Network Configuration
 
@@ -143,39 +135,33 @@ Tambahan:
 - [ ] Disable ICMP redirects: `net.ipv4.conf.all.accept_redirects = 0`
 - [ ] Enable TCP SYN cookies: `net.ipv4.tcp_syncookies = 1`
 - [ ] Disable IPv6 kalau tidak dipakai
-
-Tambahan:
-
-- [ ] **(tambahan)** `net.ipv4.conf.default.accept_redirects = 0` dan `net.ipv6.conf.all.accept_redirects = 0`
-- [ ] **(tambahan)** `net.ipv4.conf.all.send_redirects = 0` dan `net.ipv4.conf.default.send_redirects = 0`
-- [ ] **(tambahan)** `net.ipv4.conf.all.secure_redirects = 0` dan `net.ipv4.conf.default.secure_redirects = 0`
-- [ ] **(tambahan)** `net.ipv4.conf.all.accept_source_route = 0` (default dan IPv6 juga)
-- [ ] **(tambahan)** `net.ipv4.conf.all.log_martians = 1` (paket dengan alamat mustahil dicatat)
-- [ ] **(tambahan)** `net.ipv4.icmp_echo_ignore_broadcasts = 1` dan `net.ipv4.icmp_ignore_bogus_error_responses = 1`
-- [ ] **(tambahan)** `net.ipv4.conf.all.rp_filter = 1` (anti IP spoofing)
-- [ ] **(tambahan)** `net.ipv6.conf.all.accept_ra = 0` bila IPv6 dipakai
-- [ ] **(tambahan)** Setting sysctl dibuat permanen di `/etc/sysctl.d/*.conf`, bukan hanya `sysctl -w` (hilang saat reboot)
-- [ ] **(tambahan)** Firewall host (`ufw`) aktif: default deny incoming, izinkan SSH dari jaringan Host-only saja. Pastikan aturan SSH ada sebelum firewall diaktifkan
-- [ ] **(tambahan)** Protokol jarang dipakai dinonaktifkan: `dccp`, `sctp`, `rds`, `tipc`
-- [ ] **(tambahan)** Port yang listening ditinjau (`ss -tulpn`); yang terbuka hanya yang dibutuhkan (SSH)
+- [ ] `net.ipv4.conf.default.accept_redirects = 0` dan `net.ipv6.conf.all.accept_redirects = 0`
+- [ ] `net.ipv4.conf.all.send_redirects = 0` dan `net.ipv4.conf.default.send_redirects = 0`
+- [ ] `net.ipv4.conf.all.secure_redirects = 0` dan `net.ipv4.conf.default.secure_redirects = 0`
+- [ ] `net.ipv4.conf.all.accept_source_route = 0` (default dan IPv6 juga)
+- [ ] `net.ipv4.conf.all.log_martians = 1` (paket dengan alamat mustahil dicatat)
+- [ ] `net.ipv4.icmp_echo_ignore_broadcasts = 1` dan `net.ipv4.icmp_ignore_bogus_error_responses = 1`
+- [ ] `net.ipv4.conf.all.rp_filter = 1` (anti IP spoofing)
+- [ ] `net.ipv6.conf.all.accept_ra = 0` bila IPv6 dipakai
+- [ ] Setting sysctl dibuat permanen di `/etc/sysctl.d/*.conf`, bukan hanya `sysctl -w` (hilang saat reboot)
+- [ ] Firewall host (`ufw`) aktif: default deny incoming, izinkan SSH dari jaringan Host-only saja. Pastikan aturan SSH ada sebelum firewall diaktifkan
+- [ ] Protokol jarang dipakai dinonaktifkan: `dccp`, `sctp`, `rds`, `tipc`
+- [ ] Port yang listening ditinjau (`ss -tulpn`); yang terbuka hanya yang dibutuhkan (SSH)
 
 ### D. Logging & Auditing
 
 - [ ] `auditd` terinstall dan enabled
 - [ ] `rsyslog` terinstall dan enabled
 - [ ] Logrotate dikonfigurasi
-
-Tambahan:
-
-- [ ] **(tambahan)** Rule auditd untuk: perubahan waktu sistem, file identitas (`/etc/passwd`, `/etc/group`, `/etc/shadow`, `/etc/gshadow`), `/etc/sudoers`, `/etc/ssh/sshd_config`, login/logout (`lastlog`, `faillog`), sesi (`utmp`, `wtmp`, `btmp`), perubahan mount, penghapusan file, pemuatan modul kernel, perubahan permission dan ownership
-- [ ] **(tambahan)** Rule auditd khusus blue team: eksekusi dari direktori writable (`/tmp`, `/dev/shm`) dan perubahan `/etc/fstab`
-- [ ] **(tambahan)** Konfigurasi auditd: `max_log_file`, `max_log_file_action`, `space_left_action`, `admin_space_left_action`; parameter kernel `audit=1`
-- [ ] **(tambahan)** Audit config immutable (`-e 2`) di akhir rules (opsional; ubah rule butuh reboot)
-- [ ] **(tambahan)** Permission file di `/var/log` dan `/var/log/audit` dibatasi (umumnya 0640 atau lebih ketat)
-- [ ] **(tambahan)** `journald` persistent dan terkompresi
-- [ ] **(tambahan)** Retensi `auth.log` cukup panjang (log lama pindah ke `auth.log.1`; bukti brute-force tidak boleh hilang cepat)
-- [ ] **(tambahan)** Pengiriman log ke remote/SIEM (opsional, lanjutan: Wazuh atau Splunk di lab yang sudah ada)
-- [ ] **(tambahan)** Hasil pengecekan AIDE tercatat di log
+- [ ] Rule auditd untuk: perubahan waktu sistem, file identitas (`/etc/passwd`, `/etc/group`, `/etc/shadow`, `/etc/gshadow`), `/etc/sudoers`, `/etc/ssh/sshd_config`, login/logout (`lastlog`, `faillog`), sesi (`utmp`, `wtmp`, `btmp`), perubahan mount, penghapusan file, pemuatan modul kernel, perubahan permission dan ownership
+- [ ] Rule auditd khusus blue team: eksekusi dari direktori writable (`/tmp`, `/dev/shm`) dan perubahan `/etc/fstab`
+- [ ] Konfigurasi auditd: `max_log_file`, `max_log_file_action`, `space_left_action`, `admin_space_left_action`; parameter kernel `audit=1`
+- [ ] Audit config immutable (`-e 2`) di akhir rules (opsional; ubah rule butuh reboot)
+- [ ] Permission file di `/var/log` dan `/var/log/audit` dibatasi (umumnya 0640 atau lebih ketat)
+- [ ] `journald` persistent dan terkompresi
+- [ ] Retensi `auth.log` cukup panjang (log lama pindah ke `auth.log.1`; bukti brute-force tidak boleh hilang cepat)
+- [ ] Pengiriman log ke remote/SIEM (opsional, lanjutan: Wazuh atau Splunk di lab yang sudah ada)
+- [ ] Hasil pengecekan AIDE tercatat di log
 
 ### E. Access, Authentication, Authorization
 
@@ -186,39 +172,39 @@ Tambahan:
 - [ ] Default `umask` diset ke 027 atau lebih ketat
 - [ ] Root `PATH` tidak mengandung direktori writable oleh user lain
 
-Tambahan, cron dan at:
+Cron dan at:
 
-- [ ] **(tambahan)** Permission `/etc/crontab` dan `/etc/cron.hourly`, `cron.daily`, `cron.weekly`, `cron.monthly`, `cron.d` dimiliki root dan tidak bisa diakses group/other
-- [ ] **(tambahan)** `at` dibatasi (`/etc/at.allow`) atau tidak terinstall
+- [ ] Permission `/etc/crontab` dan `/etc/cron.hourly`, `cron.daily`, `cron.weekly`, `cron.monthly`, `cron.d` dimiliki root dan tidak bisa diakses group/other
+- [ ] `at` dibatasi (`/etc/at.allow`) atau tidak terinstall
 
-Tambahan, SSH:
+SSH:
 
-- [ ] **(tambahan)** SSH key dibuat dan **diuji login-nya** sebelum `PasswordAuthentication no` diterapkan, supaya tidak terkunci
-- [ ] **(tambahan)** Permission `/etc/ssh/sshd_config` (0600 root) dan private host key (0600)
-- [ ] **(tambahan)** `PermitEmptyPasswords no`, `HostbasedAuthentication no`, `IgnoreRhosts yes`, `PermitUserEnvironment no`
-- [ ] **(tambahan)** `X11Forwarding no` dan `AllowTcpForwarding no` (atau `DisableForwarding yes`)
-- [ ] **(tambahan)** Idle timeout: `ClientAliveInterval` dan `ClientAliveCountMax`; plus `LoginGraceTime 60`, `MaxSessions`, `MaxStartups`
-- [ ] **(tambahan)** `AllowUsers` atau `AllowGroups` membatasi siapa yang boleh login SSH
-- [ ] **(tambahan)** Algoritma kuat (`Ciphers`, `MACs`, `KexAlgorithms`) sesuai CIS
-- [ ] **(tambahan)** Banner SSH diarahkan ke `/etc/issue.net`
-- [ ] **(tambahan)** Config divalidasi dengan `sudo sshd -t` sebelum reload; uji dari sesi kedua sebelum menutup sesi lama
+- [ ] SSH key dibuat dan **diuji login-nya** sebelum `PasswordAuthentication no` diterapkan, supaya tidak terkunci
+- [ ] Permission `/etc/ssh/sshd_config` (0600 root) dan private host key (0600)
+- [ ] `PermitEmptyPasswords no`, `HostbasedAuthentication no`, `IgnoreRhosts yes`, `PermitUserEnvironment no`
+- [ ] `X11Forwarding no` dan `AllowTcpForwarding no` (atau `DisableForwarding yes`)
+- [ ] Idle timeout: `ClientAliveInterval` dan `ClientAliveCountMax`; plus `LoginGraceTime 60`, `MaxSessions`, `MaxStartups`
+- [ ] `AllowUsers` atau `AllowGroups` membatasi siapa yang boleh login SSH
+- [ ] Algoritma kuat (`Ciphers`, `MACs`, `KexAlgorithms`) sesuai CIS
+- [ ] Banner SSH diarahkan ke `/etc/issue.net`
+- [ ] Config divalidasi dengan `sudo sshd -t` sebelum reload; uji dari sesi kedua sebelum menutup sesi lama
 
-Tambahan, PAM dan password:
+PAM dan password:
 
-- [ ] **(tambahan)** Lockout akun setelah gagal login (`pam_faillock`, misal `deny=5`, `unlock_time=900`)
-- [ ] **(tambahan)** `pam_pwhistory` (`remember=24`) selain `pam_pwquality`
-- [ ] **(tambahan)** Algoritma hash password kuat (`yescrypt` atau `sha512`)
-- [ ] **(tambahan)** `INACTIVE` di `useradd -D` maksimal 30 hari
-- [ ] **(tambahan)** Tidak ada akun dengan password kosong
+- [ ] Lockout akun setelah gagal login (`pam_faillock`, misal `deny=5`, `unlock_time=900`)
+- [ ] `pam_pwhistory` (`remember=24`) selain `pam_pwquality`
+- [ ] Algoritma hash password kuat (`yescrypt` atau `sha512`)
+- [ ] `INACTIVE` di `useradd -D` maksimal 30 hari
+- [ ] Tidak ada akun dengan password kosong
 
-Tambahan, sudo, su, dan sesi:
+Sudo, su, dan sesi:
 
-- [ ] **(tambahan)** `sudo` memakai `use_pty` dan `logfile`, `timestamp_timeout` dibatasi
-- [ ] **(tambahan)** `su` dibatasi ke grup tertentu (`pam_wheel`)
-- [ ] **(tambahan)** Anggota grup `sudo` hanya user yang berhak. Baseline: hanya `linuxaufa`. Tinjau juga grup `lxd` (anggotanya dapat dipakai untuk eskalasi ke root) dan `adm` (akses baca log)
-- [ ] **(tambahan)** Timeout shell interaktif (`TMOUT=900`, readonly). Terkait sesi `tty1` yang menganggur di baseline
-- [ ] **(tambahan)** Akun sistem memakai `nologin` dan terkunci
-- [ ] **(tambahan)** Home directory user 750 atau lebih ketat; dot file tidak writable group/other; tidak ada `.netrc`, `.forward`, `.rhosts`
+- [ ] `sudo` memakai `use_pty` dan `logfile`, `timestamp_timeout` dibatasi
+- [ ] `su` dibatasi ke grup tertentu (`pam_wheel`)
+- [ ] Anggota grup `sudo` hanya user yang berhak. Baseline: hanya `linuxaufa`. Tinjau juga grup `lxd` (anggotanya dapat dipakai untuk eskalasi ke root) dan `adm` (akses baca log)
+- [ ] Timeout shell interaktif (`TMOUT=900`, readonly). Terkait sesi `tty1` yang menganggur di baseline
+- [ ] Akun sistem memakai `nologin` dan terkunci
+- [ ] Home directory user 750 atau lebih ketat; dot file tidak writable group/other; tidak ada `.netrc`, `.forward`, `.rhosts`
 
 ### F. System Maintenance / File Permissions
 
@@ -227,24 +213,21 @@ Tambahan, sudo, su, dan sesi:
 - [ ] Tidak ada duplicate UID/GID
 - [ ] Hanya `root` yang punya UID 0
 - [ ] Tidak ada file world-writable tanpa sticky bit di direktori umum
-
-Tambahan:
-
-- [ ] **(tambahan)** Permission `/etc/group` dan `/etc/shells` = 644; `/etc/passwd-` = 644; `/etc/group-` = 644; `/etc/shadow-`, `/etc/gshadow`, `/etc/gshadow-` = 640 root:shadow
-- [ ] **(tambahan)** Tidak ada duplicate username dan group name
-- [ ] **(tambahan)** Semua GID di `/etc/passwd` ada di `/etc/group`
-- [ ] **(tambahan)** Grup `shadow` tidak punya anggota
-- [ ] **(tambahan)** Tidak ada file atau direktori tanpa owner atau group (`-nouser`, `-nogroup`)
-- [ ] **(tambahan)** File SUID/SGID ditinjau dan baseline-nya dicatat
-- [ ] **(tambahan)** File world-writable (bukan direktori sticky) ditinjau
-- [ ] **(tambahan)** Home directory semua user interaktif ada dan dimiliki user yang benar
-- [ ] **(tambahan)** Tidak ada entri legacy `+` di `/etc/passwd`, `/etc/shadow`, `/etc/group`
-- [ ] **(tambahan)** Pengecekan `find` memakai path asli (`/usr/bin`) atau `-L`, karena `/bin`, `/sbin`, `/lib` adalah symlink (hindari false negative)
+- [ ] Permission `/etc/group` dan `/etc/shells` = 644; `/etc/passwd-` = 644; `/etc/group-` = 644; `/etc/shadow-`, `/etc/gshadow`, `/etc/gshadow-` = 640 root:shadow
+- [ ] Tidak ada duplicate username dan group name
+- [ ] Semua GID di `/etc/passwd` ada di `/etc/group`
+- [ ] Grup `shadow` tidak punya anggota
+- [ ] Tidak ada file atau direktori tanpa owner atau group (`-nouser`, `-nogroup`)
+- [ ] File SUID/SGID ditinjau dan baseline-nya dicatat
+- [ ] File world-writable (bukan direktori sticky) ditinjau
+- [ ] Home directory semua user interaktif ada dan dimiliki user yang benar
+- [ ] Tidak ada entri legacy `+` di `/etc/passwd`, `/etc/shadow`, `/etc/group`
+- [ ] Pengecekan `find` memakai path asli (`/usr/bin`) atau `-L`, karena `/bin`, `/sbin`, `/lib` adalah symlink (hindari false negative)
 
 ---
 ## Pemetaan Check Function (Fase 4)
 
-Function dari kerangka awal (diisi sendiri dulu, minta hint hanya kalau stuck):
+Function dari kerangka awal diisi sendiri dulu, minta hint kalau stuck aja. Sisanya function yang aku rencanain buat ngecek item lain di checklist:
 
 - [ ] `check_ssh_root_login` (kategori E)
 - [ ] `check_ssh_password_auth` (kategori E)
@@ -254,29 +237,26 @@ Function dari kerangka awal (diisi sendiri dulu, minta hint hanya kalau stuck):
 - [ ] `check_shadow_permissions` (kategori F)
 - [ ] `check_password_policy` (kategori E)
 - [ ] `check_auditd_status` (kategori D)
+- [ ] `check_tmp_mount_options` (A): `nodev`, `nosuid`, `noexec` di `/tmp`
+- [ ] `check_dev_shm_mount_options` (A): `noexec` di `/dev/shm`
+- [ ] `check_aide_installed` (A)
+- [ ] `check_aslr` (A)
+- [ ] `check_sysctl_network` (C): redirects, source route, SYN cookies, `rp_filter`, `log_martians`
+- [ ] `check_firewall_status` (C)
+- [ ] `check_rsyslog_status` dan `check_logrotate` (D)
+- [ ] `check_ssh_bruteforce_log` (D/E): hitung `Failed password`, `Invalid user`, `authentication failure` per IP, cuma dari proses `sshd`, pakai threshold
+- [ ] `check_cron_permissions` (E)
+- [ ] `check_umask` dan `check_root_path` (E)
+- [ ] `check_sudo_group_members` (E): anggota grup `sudo` dan `lxd`
+- [ ] `check_uid_zero` dan `check_duplicate_uid_gid` (F)
+- [ ] `check_world_writable_files` (F): pakai path asli atau `-L`, jangan lewat symlink
 
-Function tambahan yang diusulkan:
+Hal yang perlu diingat waktu bikin semua function ini:
 
-- [ ] **(tambahan)** `check_tmp_mount_options` (A): `nodev`, `nosuid`, `noexec` di `/tmp`
-- [ ] **(tambahan)** `check_dev_shm_mount_options` (A): `noexec` di `/dev/shm`
-- [ ] **(tambahan)** `check_aide_installed` (A)
-- [ ] **(tambahan)** `check_sysctl_network` (C): redirects, source route, SYN cookies, `rp_filter`, `log_martians`
-- [ ] **(tambahan)** `check_firewall_status` (C)
-- [ ] **(tambahan)** `check_rsyslog_status` dan `check_logrotate` (D)
-- [ ] **(tambahan)** `check_cron_permissions` (E)
-- [ ] **(tambahan)** `check_umask` dan `check_root_path` (E)
-- [ ] **(tambahan)** `check_sudo_group_members` (E): anggota grup `sudo` dan `lxd`
-- [ ] **(tambahan)** `check_ssh_bruteforce_log` (D/E): hitung `Failed password`, `Invalid user`, `authentication failure` per IP, hanya dari proses `sshd`, dengan threshold
-- [ ] **(tambahan)** `check_uid_zero` dan `check_duplicate_uid_gid` (F)
-- [ ] **(tambahan)** `check_world_writable_files` (F): path asli atau `-L`, bukan lewat symlink
-- [ ] **(tambahan)** `check_aslr` (A)
-
-Catatan desain untuk semua function:
-
-- Hindari false positive: jejak `sudo grep` ikut tercatat di `auth.log`; saring ke proses `sshd`
-- Hindari false negative: satu pola `grep` tidak cukup; `lastb` jadi pembanding
-- Log berotasi (`auth.log.1`) dan timestamp memakai UTC
-- Pastikan pengecekan benar-benar memeriksa sesuatu (hasil kosong tidak sama dengan PASS)
+- Hati-hati false positive: jejak `sudo grep` ikut tercatat di `auth.log`, jadi saring ke proses `sshd`
+- Hati-hati false negative: satu pola `grep` nggak cukup, `lastb` bisa jadi pembanding
+- Log berotasi (`auth.log.1`) dan timestamp-nya UTC
+- Pastikan pengecekan beneran memeriksa sesuatu (hasil kosong belum tentu PASS)
 
 ---
 
