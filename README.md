@@ -15,17 +15,17 @@ Project ini mempelajari struktur filesystem Linux (FHS), menerapkan hardening be
 - OpenSSH: akses remote dari host Windows (NAT + Host-only)
 - Bash: audit script (8 check function dari kerangka awal, ditambah check lain yang direncanakan)
 - Git/GitHub: version control dan dokumentasi before/after
-- Python (opsional, rencana): report generator dengan output HTML
-- auditd, AIDE, ufw (rencana): logging, integrity checking, firewall di Fase 3
+- Python (opsional, planning): report generator dengan output HTML
+- auditd, AIDE, ufw (planning): logging, integrity checking, firewall di Fase 3
 
 ## Struktur Folder
 
 ```
 linux-hardening-audit/
 ├── README.md
-├── writeup.md                      (rencana)
+├── writeup.md                      (planning)
 ├── scripts/
-│   └── linux-hardening-audit.sh    (rencana, kerangka sudah ada)
+│   └── linux-hardening-audit.sh    (planning, kerangka sudah ada)
 ├── checklist/
 │   └── cis-benchmark-checklist.md
 └── docs/
@@ -35,7 +35,7 @@ linux-hardening-audit/
     │   ├── fase3/
     │   └── fase4/
     ├── notes/
-    └── reports/                    (audit report before/after, rencana)
+    └── reports/                    (audit report before/after, planning)
 ```
 
 ## Progress
@@ -48,7 +48,8 @@ linux-hardening-audit/
 | Fase 4: Build Audit Script | ⬜ Belum |
 | Fase 5: Dokumentasi / Writeup | ⬜ Belum |
 
-**Progress keseluruhan: 14%** (21 dari 151 item pada checklist; detail di `project-snapshot-linux-hardening-audit-2026-10-23.md`)
+<!-- **Progress keseluruhan: 14%** (21 dari 151 item pada checklist; detail di `project-snapshot-linux-hardening-audit-2026-10-23.md`) -->
+**Progress keseluruhan: 14%** (21 dari 151 item pada checklist)
 
 ## Dokumentasi
 
