@@ -23,7 +23,7 @@ Project ini mempelajari struktur filesystem Linux (FHS), menerapkan hardening be
 ```
 linux-hardening-audit/
 ├── README.md
-├── writeup.md                      (planning)
+├── writeups/                       (planning)
 ├── scripts/
 │   └── linux-hardening-audit.sh    (planning, kerangka sudah ada)
 ├── checklist/
@@ -56,7 +56,7 @@ linux-hardening-audit/
 - Checklist CIS lengkap: [`checklist/cis-benchmark-checklist.md`](checklist/cis-benchmark-checklist.md)
 - Catatan belajar dan troubleshooting: folder `docs/notes/`
 - Bukti per langkah: `docs/screenshots/fase1` sampai `fase3`
-- Writeup lengkap (`writeup.md`) masih disusun, akan menyusul setelah Fase 3 sampai 5 selesai
+<!-- - Writeup lengkap (`writeup.md`) masih disusun, akan menyusul setelah Fase 3 sampai 5 selesai -->
 
 ## Disclaimer
 
